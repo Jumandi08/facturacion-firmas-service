@@ -1,0 +1,86 @@
+{
+  "proyecto": "facturacion-firmas-service",
+  "version": "1.0.0",
+  "fecha": "2026-07-05",
+  "commit": "04c9120057bf762f38827e3bedb324d1bceba22d",
+  "tests": {
+    "comando": "./gradlew.bat clean test jacocoTestReport",
+    "passed": 25,
+    "total": 25,
+    "coverage": 95.74,
+    "coverage_fuente": "build/reports/jacoco/test/jacocoTestReport.xml (LINE global: covered=90, missed=4 sobre 94; 4 líneas sin cubrir corresponden a equals()/hashCode() de Cliente.java, no a lógica de negocio)"
+  },
+  "security": {
+    "fuente": "Semgrep MCP (semgrep_scan) sobre src/main/java completo (14 archivos) + grep de secretos + revision manual de ClienteController.java, via subagente security-reviewer",
+    "critical": 0,
+    "high": 0,
+    "secrets": 0,
+    "hallazgos": [
+      {
+        "severidad": "info",
+        "regla": "n/a (revision manual, no Semgrep)",
+        "archivo": "src/main/java/org/ups/facturacionfirmas/adapters/rest/ClienteController.java",
+        "linea": 36,
+        "nota": "POST /api/v1/clientes sin autenticacion - deuda conocida y aceptada explicitamente en specs/001-registrar-cliente-vencimiento/spec.md (Assumptions + FR-008), no es hallazgo nuevo"
+      },
+      {
+        "severidad": "info",
+        "regla": "n/a (revision manual, no Semgrep)",
+        "archivo": "src/main/java/org/ups/facturacionfirmas/adapters/rest/ClienteController.java",
+        "linea": 42,
+        "nota": "GET /api/v1/clientes sin autenticacion - misma deuda conocida documentada en el spec"
+      }
+    ]
+  },
+  "spec": "specs/001-registrar-cliente-vencimiento/spec.md",
+  "criteria": [
+    {
+      "id": "FR-001",
+      "fuente": "spec.md - FR-001 (registrar cliente con nombre y fecha, id unico)",
+      "status": "cumple",
+      "evidencia": "src/test/java/.../functional/ClienteFunctionalTest.java: should_return_201_with_cliente_when_datos_validos PASA; src/test/java/.../unit/application/RegistrarClienteServiceTest.java: should_assign_unique_id_to_new_cliente PASA"
+    },
+    {
+      "id": "FR-002",
+      "fuente": "spec.md - FR-002 (rechazar fecha de vencimiento nula/vacia con error de validacion)",
+      "status": "cumple",
+      "evidencia": "src/test/java/.../functional/ClienteFunctionalTest.java: should_return_400_when_fecha_vencimiento_faltante PASA (HTTP 400, campo=fechaVencimiento); src/test/java/.../unit/domain/ClienteTest.java: should_throw_when_fecha_vencimiento_is_null PASA"
+    },
+    {
+      "id": "FR-003",
+      "fuente": "spec.md - FR-003 (rechazar nombre nulo/vacio/solo espacios)",
+      "status": "cumple",
+      "evidencia": "src/test/java/.../functional/ClienteFunctionalTest.java: should_return_400_when_nombre_en_blanco PASA (HTTP 400, campo=nombre); src/test/java/.../unit/domain/ClienteTest.java: should_throw_when_nombre_is_null y should_throw_when_nombre_is_blank PASAN"
+    },
+    {
+      "id": "FR-004",
+      "fuente": "spec.md - FR-004 (estado calculado AL_DIA / POR_VENCER / VENCIDA segun N)",
+      "status": "cumple",
+      "evidencia": "src/test/java/.../unit/domain/ClienteTest.java: should_return_AL_DIA_when_faltan_mas_de_N_dias, should_return_POR_VENCER_when_faltan_exactamente_N_dias, should_return_POR_VENCER_when_falta_un_dia, should_return_VENCIDA_when_fecha_vencimiento_es_hoy, should_return_VENCIDA_when_fecha_vencimiento_ya_paso - todas PASAN"
+    },
+    {
+      "id": "FR-005",
+      "fuente": "spec.md - FR-005 (N constante de configuracion, default 15, minimo 7, no ingresado por cliente)",
+      "status": "cumple",
+      "evidencia": "RegistrarClienteService.java:14 define MINIMO_DIAS_ANTICIPACION_N=7; constructor (lineas 19-29) lanza IllegalArgumentException fail-fast si el diasAnticipacionN inyectado por @Value('${app.vencimiento.dias-anticipacion-n}') es menor a 7. Cubierto por dos pruebas en RegistrarClienteServiceTest.java: should_throw_when_dias_anticipacion_n_is_below_minimum_of_7 (N=6, rechazo) y should_accept_dias_anticipacion_n_equal_to_minimum_of_7 (N=7, limite aceptado) - ambas PASAN en la corrida limpia (./gradlew clean test). Valor por defecto configurado en src/main/resources/application.properties:11 = 15, consistente con el spec. Corrige el incumplimiento detectado en la corrida anterior (commit 04c9120)."
+    },
+    {
+      "id": "FR-006",
+      "fuente": "spec.md - FR-006 (permitir registrar clientes con fecha ya vencida, estado VENCIDA desde el registro)",
+      "status": "cumple",
+      "evidencia": "src/test/java/.../functional/ClienteFunctionalTest.java: should_return_estado_calculado_when_cliente_registrado PASA (fechaVencimiento=2020-01-01 -> estado VENCIDA en la respuesta del registro)"
+    },
+    {
+      "id": "FR-007",
+      "fuente": "spec.md - FR-007 (listar clientes con estado calculado, lista vacia si no hay clientes, sin error)",
+      "status": "cumple",
+      "evidencia": "src/test/java/.../functional/ClienteFunctionalTest.java: should_return_200_with_empty_list_when_no_clientes PASA (HTTP 200 con cartera vacia); should_return_200_with_clientes_and_estados_when_multiple_registered PASA (multiples clientes, estados AL_DIA/VENCIDA correctos)"
+    },
+    {
+      "id": "FR-008",
+      "fuente": "spec.md - FR-008 (fuera de alcance: alertas, tablero visual, edicion/eliminacion/autenticacion)",
+      "status": "cumple",
+      "evidencia": "No existen endpoints ni clases de alertas, tablero, edicion/eliminacion o seguridad en src/main (confirmado por ausencia de dependencia spring-boot-starter-security y por inspeccion de ClienteController.java, que solo expone POST/GET de registro y consulta). Ausencia de autenticacion es deuda declarada explicitamente en Assumptions del spec, no un incumplimiento de esta historia."
+    }
+  ]
+}
