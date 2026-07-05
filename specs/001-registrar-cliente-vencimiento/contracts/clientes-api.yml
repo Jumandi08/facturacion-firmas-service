@@ -1,0 +1,79 @@
+openapi: 3.0.3
+info:
+  title: Facturación Firmas Service — API de Clientes
+  description: >
+    Endpoints de la funcionalidad "Registrar cliente con fecha de vencimiento
+    de firma digital" (US-04, épica E-02).
+  version: "1.0.0"
+paths:
+  /api/v1/clientes:
+    post:
+      summary: Registrar un cliente nuevo con su fecha de vencimiento de firma
+      operationId: registrarCliente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistrarClienteRequest'
+      responses:
+        '201':
+          description: Cliente registrado correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClienteResponse'
+        '400':
+          description: Error de validación (nombre o fecha de vencimiento faltante/inválida)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      summary: Consultar el listado completo de clientes de la cartera
+      operationId: consultarCartera
+      responses:
+        '200':
+          description: Listado de clientes (vacío si no hay ninguno registrado)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ClienteResponse'
+components:
+  schemas:
+    RegistrarClienteRequest:
+      type: object
+      required: [nombre, fechaVencimiento]
+      properties:
+        nombre:
+          type: string
+          example: "Comercial Andina S.A."
+        fechaVencimiento:
+          type: string
+          format: date
+          example: "2026-08-15"
+    ClienteResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+        fechaVencimiento:
+          type: string
+          format: date
+        estado:
+          type: string
+          enum: [AL_DIA, POR_VENCER, VENCIDA]
+    ErrorResponse:
+      type: object
+      properties:
+        campo:
+          type: string
+          example: "fechaVencimiento"
+        mensaje:
+          type: string
+          example: "La fecha de vencimiento es obligatoria"
