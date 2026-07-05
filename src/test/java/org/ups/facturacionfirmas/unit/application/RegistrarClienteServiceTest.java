@@ -14,6 +14,7 @@ import org.ups.facturacionfirmas.domain.EstadoCliente;
 import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -59,5 +60,19 @@ class RegistrarClienteServiceTest {
         Cliente c2 = service.registrar("Cliente B", LocalDate.now().plusDays(5));
 
         assertThat(c1.getId()).isNotEqualTo(c2.getId());
+    }
+
+    @Test
+    void should_throw_when_dias_anticipacion_n_is_below_minimum_of_7() {
+        assertThatThrownBy(() -> new RegistrarClienteService(clienteRepository, 6))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("dias-anticipacion-n");
+    }
+
+    @Test
+    void should_accept_dias_anticipacion_n_equal_to_minimum_of_7() {
+        RegistrarClienteService servicioConMinimo = new RegistrarClienteService(clienteRepository, 7);
+
+        assertThat(servicioConMinimo.getDiasAnticipacionN()).isEqualTo(7);
     }
 }

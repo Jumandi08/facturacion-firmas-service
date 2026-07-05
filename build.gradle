@@ -58,7 +58,6 @@ jacocoTestCoverageVerification {
 				counter = 'LINE'
 				minimum = 0.80
 			}
-			excludes = ['org.ups.facturacionfirmas.FacturacionFirmasServiceApplication']
 		}
 	}
 }
